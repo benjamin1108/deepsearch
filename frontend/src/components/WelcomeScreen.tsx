@@ -4,6 +4,7 @@ interface WelcomeScreenProps {
   handleSubmit: (
     submittedInputValue: string,
     effort: string,
+    provider: string,
     model: string
   ) => void;
   onCancel: () => void;
@@ -33,7 +34,7 @@ export const WelcomeScreen: React.FC<WelcomeScreenProps> = ({
       />
     </div>
     <p className="text-xs text-neutral-500">
-      Powered by Google Gemini and LangChain LangGraph.
+      Powered by multiple LLM providers and LangChain LangGraph.
     </p>
   </div>
 );
