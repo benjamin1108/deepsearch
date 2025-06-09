@@ -52,12 +52,6 @@ export function ActivityTimeline({
     return <Activity className="h-4 w-4 text-neutral-400" />;
   };
 
-  useEffect(() => {
-    if (!isLoading && processedEvents.length !== 0) {
-      setIsTimelineCollapsed(true);
-    }
-  }, [isLoading, processedEvents]);
-
   return (
     <Card className="border-none rounded-lg bg-neutral-700 max-h-96">
       <CardHeader>
@@ -66,7 +60,7 @@ export function ActivityTimeline({
             className="flex items-center justify-start text-sm w-full cursor-pointer gap-2 text-neutral-100"
             onClick={() => setIsTimelineCollapsed(!isTimelineCollapsed)}
           >
-            Research
+            Research Process
             {isTimelineCollapsed ? (
               <ChevronDown className="h-4 w-4 mr-2" />
             ) : (
