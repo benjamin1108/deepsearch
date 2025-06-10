@@ -2,6 +2,9 @@ import os
 
 from agent.tools_and_schemas import SearchQueryList, Reflection
 from dotenv import load_dotenv
+
+load_dotenv()
+
 from langchain_core.messages import AIMessage
 from langgraph.types import Send
 from langgraph.graph import StateGraph
@@ -31,30 +34,27 @@ from agent.utils import (
     resolve_urls,
 )
 
-load_dotenv()
-
 
 # Nodes
 def generate_query(state: OverallState, config: RunnableConfig) -> QueryGenerationState:
-    """LangGraph node that generates a search queries based on the User's question.
+    """LangGraph 节点，根据用户的问题生成搜索查询。
 
-    Uses Gemini 2.0 Flash to create an optimized search query for web research based on
-    the User's question.
+    使用 Gemini 2.0 Flash 根据用户的问题创建一个优化的网络研究搜索查询。
 
     Args:
-        state: Current graph state containing the User's question
-        config: Configuration for the runnable, including LLM provider settings
+        state: 包含用户问题的当前图状态
+        config: 可运行程序的配置，包括 LLM 提供商设置
 
     Returns:
-        Dictionary with state update, including search_query key containing the generated query
+        包含状态更新的字典，其中包括包含生成查询的 search_query 键
     """
     configurable = Configuration.from_runnable_config(config)
 
-    # check for custom initial search query count
+    # 检查自定义的初始搜索查询数量
     if state.get("initial_search_query_count") is None:
         state["initial_search_query_count"] = configurable.number_of_initial_queries
 
-    # Initialize LLM using factory
+    # 使用工厂初始化 LLM
     llm = LLMFactory.create_llm(
         provider=configurable.llm_provider,
         model_name=configurable.query_generator_model,
@@ -63,35 +63,35 @@ def generate_query(state: OverallState, config: RunnableConfig) -> QueryGenerati
     )
     structured_llm = llm.with_structured_output(SearchQueryList)
 
-    # Format the prompt
+    # 格式化提示
     current_date = get_current_date()
     formatted_prompt = query_writer_instructions.format(
         current_date=current_date,
         research_topic=get_research_topic(state["messages"]),
         number_queries=state["initial_search_query_count"],
     )
-    # Generate the search queries
+    # 生成搜索查询
     try:
-        print(f"Debug: Using provider {configurable.llm_provider}, model {configurable.query_generator_model}")
-        print(f"Debug: Formatted prompt: {formatted_prompt[:200]}...")
+        print(f"调试：使用服务商 {configurable.llm_provider}，模型 {configurable.query_generator_model}")
+        print(f"调试：格式化后的提示：{formatted_prompt[:200]}...")
         result = structured_llm.invoke(formatted_prompt)
-        print(f"Debug: LLM result: {result}")
+        print(f"调试：LLM 结果：{result}")
         if result is None:
-            print(f"Warning: LLM returned None for provider {configurable.llm_provider}")
-            # 回退到简单的查询生成
+            print(f"警告：服务商 {configurable.llm_provider} 的 LLM 返回了 None")
+            # Fallback to simple query generation
             return {"query_list": [get_research_topic(state["messages"])]}
-        return {"query_list": result.query}
+        return {"query_list": result.query or []}
     except Exception as e:
-        print(f"Error in generate_query: {e}")
-        print(f"Provider: {configurable.llm_provider}, Model: {configurable.query_generator_model}")
-        # 回退到简单的查询生成
+        print(f"generate_query 出错：{e}")
+        print(f"服务商：{configurable.llm_provider}，模型：{configurable.query_generator_model}")
+        # Fallback to simple query generation
         return {"query_list": [get_research_topic(state["messages"])]}
 
 
 def continue_to_web_research(state: QueryGenerationState):
-    """LangGraph node that sends the search queries to the web research node.
+    """LangGraph 节点，将搜索查询发送到网络研究节点。
 
-    This is used to spawn n number of web research nodes, one for each search query.
+    用于生成 n 个网络研究节点，每个搜索查询对应一个。
     """
     return [
         Send("web_research", {"search_query": search_query, "id": int(idx)})
@@ -100,17 +100,16 @@ def continue_to_web_research(state: QueryGenerationState):
 
 
 def web_research(state: WebSearchState, config: RunnableConfig) -> OverallState:
-    """LangGraph node that performs web research using appropriate search method based on LLM provider.
+    """LangGraph 节点，根据 LLM 提供商使用适当的搜索方法执行网络研究。
 
-    Executes a web search using either native Gemini Google Search or external search APIs 
-    depending on the configured LLM provider.
+    根据配置的 LLM 提供商，使用本地 Gemini 谷歌搜索或外部搜索 API 执行网络搜索。
 
     Args:
-        state: Current graph state containing the search query and research loop count
-        config: Configuration for the runnable, including search API settings
+        state: 包含搜索查询和研究循环次数的当前图状态
+        config: 可运行程序的配置，包括搜索 API 设置
 
     Returns:
-        Dictionary with state update, including sources_gathered, research_loop_count, and web_research_results
+        包含状态更新的字典，包括 sources_gathered、research_loop_count 和 web_research_results
     """
     # Configure
     configurable = Configuration.from_runnable_config(config)
@@ -119,7 +118,7 @@ def web_research(state: WebSearchState, config: RunnableConfig) -> OverallState:
         research_topic=state["search_query"],
     )
 
-    # Use SearchUtils to handle different providers
+    # 使用 SearchUtils 处理不同的服务商
     return SearchUtils.perform_web_research(
         search_query=state["search_query"],
         provider=configurable.llm_provider,
@@ -131,31 +130,30 @@ def web_research(state: WebSearchState, config: RunnableConfig) -> OverallState:
 
 
 def reflection(state: OverallState, config: RunnableConfig) -> ReflectionState:
-    """LangGraph node that identifies knowledge gaps and generates potential follow-up queries.
+    """LangGraph 节点，识别知识差距并生成潜在的后续查询。
 
-    Analyzes the current summary to identify areas for further research and generates
-    potential follow-up queries. Uses structured output to extract
-    the follow-up query in JSON format.
+    分析当前摘要以确定需要进一步研究的领域，并生成潜在的后续查询。
+    使用结构化输出以 JSON 格式提取后续查询。
 
     Args:
-        state: Current graph state containing the running summary and research topic
-        config: Configuration for the runnable, including LLM provider settings
+        state: 包含运行中摘要和研究主题的当前图状态
+        config: 可运行程序的配置，包括 LLM 提供商设置
 
     Returns:
-        Dictionary with state update, including search_query key containing the generated follow-up query
+        包含状态更新的字典，其中包括包含生成的后续查询的 search_query 键
     """
     configurable = Configuration.from_runnable_config(config)
-    # Increment the research loop count
+    # 增加研究循环次数
     state["research_loop_count"] = state.get("research_loop_count", 0) + 1
 
-    # Format the prompt
+    # 格式化提示
     current_date = get_current_date()
     formatted_prompt = reflection_instructions.format(
         current_date=current_date,
         research_topic=get_research_topic(state["messages"]),
         summaries="\n\n---\n\n".join(state["web_research_result"]),
     )
-    # Initialize reasoning model using factory
+    # 使用工厂初始化推理模型
     llm = LLMFactory.create_llm(
         provider=configurable.llm_provider,
         model_name=configurable.reflection_model,
@@ -167,7 +165,7 @@ def reflection(state: OverallState, config: RunnableConfig) -> ReflectionState:
     return {
         "is_sufficient": result.is_sufficient,
         "knowledge_gap": result.knowledge_gap,
-        "follow_up_queries": result.follow_up_queries,
+        "follow_up_queries": result.follow_up_queries or [],
         "research_loop_count": state["research_loop_count"],
         "number_of_ran_queries": len(state["search_query"]),
     }
@@ -177,17 +175,16 @@ def evaluate_research(
     state: ReflectionState,
     config: RunnableConfig,
 ) -> OverallState:
-    """LangGraph routing function that determines the next step in the research flow.
+    """LangGraph 路由功能，确定研究流程的下一步。
 
-    Controls the research loop by deciding whether to continue gathering information
-    or to finalize the summary based on the configured maximum number of research loops.
+    通过根据配置的最大研究循环次数决定是继续收集信息还是最终确定摘要来控制研究循环。
 
     Args:
-        state: Current graph state containing the research loop count
-        config: Configuration for the runnable, including max_research_loops setting
+        state: 包含研究循环次数的当前图状态
+        config: 可运行程序的配置，包括 max_research_loops 设置
 
     Returns:
-        String literal indicating the next node to visit ("web_research" or "finalize_summary")
+        指示下一个要访问的节点的字符串字面量（"web_research" 或 "finalize_summary"）
     """
     configurable = Configuration.from_runnable_config(config)
     max_research_loops = (
@@ -211,21 +208,20 @@ def evaluate_research(
 
 
 def finalize_answer(state: OverallState, config: RunnableConfig):
-    """LangGraph node that finalizes the research summary.
+    """LangGraph 节点，最终确定研究摘要。
 
-    Prepares the final output by deduplicating and formatting sources, then
-    combining them with the running summary to create a well-structured
-    research report with proper citations.
+    通过去重和格式化来源准备最终输出，然后将它们与运行中摘要结合起来，
+    创建一个带有适当引用的结构良好的研究报告。
 
     Args:
-        state: Current graph state containing the running summary and sources gathered
+        state: 包含运行中摘要和收集来源的当前图状态
 
     Returns:
-        Dictionary with state update, including running_summary key containing the formatted final summary with sources
+        包含状态更新的字典，其中包括包含格式化最终摘要和来源的 running_summary 键
     """
     configurable = Configuration.from_runnable_config(config)
 
-    # Format the prompt
+    # 格式化提示
     current_date = get_current_date()
     formatted_prompt = answer_instructions.format(
         current_date=current_date,
@@ -233,7 +229,7 @@ def finalize_answer(state: OverallState, config: RunnableConfig):
         summaries="\n---\n\n".join(state["web_research_result"]),
     )
 
-    # Initialize answer model using factory
+    # 使用工厂初始化答案模型
     llm = LLMFactory.create_llm(
         provider=configurable.llm_provider,
         model_name=configurable.answer_model,
@@ -242,7 +238,7 @@ def finalize_answer(state: OverallState, config: RunnableConfig):
     )
     result = llm.invoke(formatted_prompt)
 
-    # Replace the short urls with the original urls and add all used urls to the sources_gathered
+    # 用原始 URL 替换短 URL，并将所有使用的 URL 添加到 sources_gathered
     unique_sources = []
     for source in state["sources_gathered"]:
         if source["short_url"] in result.content:

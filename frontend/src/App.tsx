@@ -4,6 +4,7 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { ProcessedEvent } from "@/components/ActivityTimeline";
 import { WelcomeScreen } from "@/components/WelcomeScreen";
 import { ChatMessagesView } from "@/components/ChatMessagesView";
+import { nanoid } from "nanoid";
 
 export default function App() {
   const [processedEventsTimeline, setProcessedEventsTimeline] = useState<
@@ -32,7 +33,7 @@ export default function App() {
       let processedEvent: ProcessedEvent | null = null;
       if (event.generate_query) {
         processedEvent = {
-          title: "Generating Search Queries",
+          title: "生成搜索查询",
           data: event.generate_query.query_list.join(", "),
         };
       } else if (event.web_research) {
@@ -43,25 +44,25 @@ export default function App() {
         ];
         const exampleLabels = uniqueLabels.slice(0, 3).join(", ");
         processedEvent = {
-          title: "Web Research",
-          data: `Gathered ${numSources} sources. Related to: ${
-            exampleLabels || "N/A"
+          title: "网络研究",
+          data: `收集到 ${numSources} 个来源。相关主题: ${
+            exampleLabels || "无"
           }.`,
         };
       } else if (event.reflection) {
         processedEvent = {
-          title: "Reflection",
+          title: "思考",
           data: event.reflection.is_sufficient
-            ? "Search successful, generating final answer."
-            : `Need more information, searching for ${
+            ? "搜索成功，正在生成最终答案。"
+            : `需要更多信息，正在搜索: ${
                 event.reflection.follow_up_queries?.join(", ") ||
-                "clarifying information"
+                "澄清信息"
               }`,
         };
       } else if (event.finalize_answer) {
         processedEvent = {
-          title: "Finalizing Answer",
-          data: "Composing and presenting the final answer.",
+          title: "完成答案",
+          data: "正在整理并呈现最终答案。",
         };
         hasFinalizeEventOccurredRef.current = true;
       }
@@ -134,7 +135,7 @@ export default function App() {
           {
             type: "human" as const,
             content: submittedInputValue,
-            id: Date.now().toString(),
+            id: nanoid(),
           },
         ],
         initial_search_query_count,

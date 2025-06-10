@@ -6,6 +6,7 @@ import { InputForm } from "@/components/InputForm";
 import { Button } from "@/components/ui/button";
 import { useState, ReactNode } from "react";
 import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -182,40 +183,62 @@ const AiMessageBubble: React.FC<AiMessageBubbleProps> = ({
   copiedMessageId,
 }) => {
   // Show live activity for the last message while loading, otherwise show historical.
-  const activityForThisBubble =
-    isLastMessage && isOverallLoading ? liveActivity : historicalActivity;
-  const isLiveActivityForThisBubble = isLastMessage && isOverallLoading;
+  const isStreaming = isLastMessage && isOverallLoading;
+  const activityForThisBubble = isStreaming ? liveActivity : historicalActivity;
+  const hasContent =
+    message.content &&
+    (typeof message.content !== "string" || message.content.trim() !== "");
 
   return (
-    <div className={`relative break-words flex flex-col`}>
+    <div className="relative group max-w-[85%] md:max-w-[80%] rounded-xl p-3 shadow-sm break-words bg-neutral-800 text-neutral-100 rounded-bl-none w-full min-h-[56px]">
+      {/* Activity Timeline */}
       {activityForThisBubble && activityForThisBubble.length > 0 && (
         <div className="mb-3 border-b border-neutral-700 pb-3 text-xs">
           <ActivityTimeline
             processedEvents={activityForThisBubble}
-            isLoading={isLiveActivityForThisBubble}
+            isLoading={isStreaming}
           />
         </div>
       )}
-      <ReactMarkdown components={mdComponents}>
-        {typeof message.content === "string"
-          ? message.content
-          : JSON.stringify(message.content)}
-      </ReactMarkdown>
-      <Button
-        variant="default"
-        className="cursor-pointer bg-neutral-700 border-neutral-600 text-neutral-300 self-end"
-        onClick={() =>
-          handleCopy(
-            typeof message.content === "string"
+
+      {/* Loading Spinner */}
+      {isStreaming &&
+        !hasContent &&
+        (!activityForThisBubble || activityForThisBubble.length === 0) && (
+          <div className="flex items-center justify-start">
+            <Loader2 className="h-5 w-5 animate-spin text-neutral-400 mr-2" />
+            <span>处理中...</span>
+          </div>
+        )}
+
+      {/* Message Content and Copy Button */}
+      {hasContent && (
+        <>
+          <ReactMarkdown
+            components={mdComponents}
+            remarkPlugins={[remarkGfm]}
+          >
+            {typeof message.content === "string"
               ? message.content
-              : JSON.stringify(message.content),
-            message.id!
-          )
-        }
-      >
-        {copiedMessageId === message.id ? "Copied" : "Copy"}
-        {copiedMessageId === message.id ? <CopyCheck /> : <Copy />}
-      </Button>
+              : JSON.stringify(message.content)}
+          </ReactMarkdown>
+          <Button
+            variant="default"
+            className="cursor-pointer bg-neutral-700 border-neutral-600 text-neutral-300 self-end"
+            onClick={() =>
+              handleCopy(
+                typeof message.content === "string"
+                  ? message.content
+                  : JSON.stringify(message.content),
+                message.id!
+              )
+            }
+          >
+            {copiedMessageId === message.id ? "已复制" : "复制"}
+            {copiedMessageId === message.id ? <CopyCheck /> : <Copy />}
+          </Button>
+        </>
+      )}
     </div>
   );
 };
@@ -258,7 +281,7 @@ export function ChatMessagesView({
           {messages.map((message, index) => {
             const isLast = index === messages.length - 1;
             return (
-              <div key={message.id || `msg-${index}`} className="space-y-3">
+              <div key={message.id} className="space-y-3">
                 <div
                   className={`flex items-start gap-3 ${
                     message.type === "human" ? "justify-end" : ""
@@ -300,7 +323,7 @@ export function ChatMessagesView({
                   ) : (
                     <div className="flex items-center justify-start h-full">
                       <Loader2 className="h-5 w-5 animate-spin text-neutral-400 mr-2" />
-                      <span>Processing...</span>
+                      <span>处理中...</span>
                     </div>
                   )}
                 </div>

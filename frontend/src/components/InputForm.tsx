@@ -89,7 +89,7 @@ export const InputForm: React.FC<InputFormProps> = ({
           value={internalInputValue}
           onChange={(e) => setInternalInputValue(e.target.value)}
           onKeyDown={handleInternalKeyDown}
-          placeholder="Who won the Euro 2024 and scored the most goals?"
+          placeholder="例如：谁赢得了 2024 年欧洲杯，以及谁是最佳射手？"
           className={`w-full text-neutral-100 placeholder-neutral-500 resize-none border-0 focus:outline-none focus:ring-0 outline-none focus-visible:ring-0 shadow-none 
                         md:text-base  min-h-[56px] max-h-[200px]`}
           rows={1}
@@ -116,7 +116,7 @@ export const InputForm: React.FC<InputFormProps> = ({
               } p-2 cursor-pointer rounded-full transition-all duration-200 text-base`}
               disabled={isSubmitDisabled}
             >
-              Search
+              搜索
               <Send className="h-5 w-5" />
             </Button>
           )}
@@ -127,30 +127,30 @@ export const InputForm: React.FC<InputFormProps> = ({
           <div className="flex flex-row gap-2 bg-neutral-700 border-neutral-600 text-neutral-300 focus:ring-neutral-500 rounded-xl rounded-t-sm pl-2  max-w-[100%] sm:max-w-[90%]">
             <div className="flex flex-row items-center text-sm">
               <Brain className="h-4 w-4 mr-2" />
-              Effort
+              精细度
             </div>
             <Select value={effort} onValueChange={setEffort}>
               <SelectTrigger className="w-[120px] bg-transparent border-none cursor-pointer">
-                <SelectValue placeholder="Effort" />
+                <SelectValue placeholder="精细度" />
               </SelectTrigger>
               <SelectContent className="bg-neutral-700 border-neutral-600 text-neutral-300 cursor-pointer">
                 <SelectItem
                   value="low"
                   className="hover:bg-neutral-600 focus:bg-neutral-600 cursor-pointer"
                 >
-                  Low
+                  低
                 </SelectItem>
                 <SelectItem
                   value="medium"
                   className="hover:bg-neutral-600 focus:bg-neutral-600 cursor-pointer"
                 >
-                  Medium
+                  中
                 </SelectItem>
                 <SelectItem
                   value="high"
                   className="hover:bg-neutral-600 focus:bg-neutral-600 cursor-pointer"
                 >
-                  High
+                  高
                 </SelectItem>
               </SelectContent>
             </Select>
@@ -158,18 +158,18 @@ export const InputForm: React.FC<InputFormProps> = ({
           <div className="flex flex-row gap-2 bg-neutral-700 border-neutral-600 text-neutral-300 focus:ring-neutral-500 rounded-xl rounded-t-sm pl-2  max-w-[100%] sm:max-w-[90%]">
             <div className="flex flex-row items-center text-sm">
               <Bot className="h-4 w-4 mr-2" />
-              Provider
+              服务商
             </div>
             <Select value={provider} onValueChange={handleProviderChange}>
               <SelectTrigger className="w-[120px] bg-transparent border-none cursor-pointer">
-                <SelectValue placeholder="Provider" />
+                <SelectValue placeholder="服务商" />
               </SelectTrigger>
               <SelectContent className="bg-neutral-700 border-neutral-600 text-neutral-300 cursor-pointer">
                 <SelectItem
                   value="gemini"
                   className="hover:bg-neutral-600 focus:bg-neutral-600 cursor-pointer"
                 >
-                  Google Gemini
+                  谷歌 Gemini
                 </SelectItem>
                 <SelectItem
                   value="openai"
@@ -181,7 +181,7 @@ export const InputForm: React.FC<InputFormProps> = ({
                   value="qwen"
                   className="hover:bg-neutral-600 focus:bg-neutral-600 cursor-pointer"
                 >
-                  Qwen
+                  通义千问
                 </SelectItem>
                 <SelectItem
                   value="grok"
@@ -195,11 +195,11 @@ export const InputForm: React.FC<InputFormProps> = ({
           <div className="flex flex-row gap-2 bg-neutral-700 border-neutral-600 text-neutral-300 focus:ring-neutral-500 rounded-xl rounded-t-sm pl-2  max-w-[100%] sm:max-w-[90%]">
             <div className="flex flex-row items-center text-sm ml-2">
               <Cpu className="h-4 w-4 mr-2" />
-              Model
+              模型
             </div>
             <Select value={model} onValueChange={setModel}>
               <SelectTrigger className="w-[150px] bg-transparent border-none cursor-pointer">
-                <SelectValue placeholder="Model" />
+                <SelectValue placeholder="模型" />
               </SelectTrigger>
               <SelectContent className="bg-neutral-700 border-neutral-600 text-neutral-300 cursor-pointer">
                 {modelOptions[provider as keyof typeof modelOptions].map((option) => (
@@ -225,7 +225,7 @@ export const InputForm: React.FC<InputFormProps> = ({
             onClick={() => window.location.reload()}
           >
             <SquarePen size={16} />
-            New Search
+            新搜索
           </Button>
         )}
       </div>
